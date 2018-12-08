@@ -1,0 +1,55 @@
+version: '3'
+services:
+  blog:
+    container_name: blog         
+    image: fulln/blog:v4.0
+    ports:
+      - "4000:4000"          
+    volumes:     
+      - ./source/:/opt/blog/source/
+      - ./blog/themes/next/_config.yml:/opt/blog/themes/next/_config.yml
+      - ./logs/debug.log:/opt/hexo/blog/debug.log
+  db:
+    image: 'mysql/mysql-server:5.7'
+    restart: always       
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "qq1203943228"   
+    networks:
+      - net-spring-db 
+    user: root   
+    volumes:
+      - ./mysql/data:/var/lib/mysql:rw
+      - ./mysql/my.cnf:/etc/my.cnf
+      - ./api/sql:/docker-entrypoint-initdb.d/
+    ports:
+      - "3306:3306"
+  api:
+    build: ./api
+    container_name: api
+    ports:
+      - "8080:8080"
+    networks: 
+      - net-spring-db
+    volumes:          
+      - ./source/:/opt/source/
+      - ./logs/api/:/opt/logs/
+      - /var/run/docker.sock
+      - /bin/docker
+    depends_on:
+      - db          
+      - redis      
+  redis:
+    restart: always
+    image: redis:4.0.9
+    container_name: redis    
+    networks:
+      - net-spring-db 
+    volumes:
+  #    -  ./redis/redis.conf:/etc/redis/redis.conf 
+      -  ./redis/data:/data 
+    ports: 
+      - "6379:6379"
+networks:
+  net-spring-db:
+    driver: bridge  
